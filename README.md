@@ -11,4 +11,5 @@
 |CopyFiles|可以选择文件或文件夹复制新的文件，保留相对路径，主要用途：大型项目只传递更新过的文件|||
 |SaveTxt|简体繁体转换并保存文件|||
 |TxtToDpl|PotPlayer直播源文件生成|||
+|ImageToIco|png 图片转ico 图标，支持不同尺寸不同图片|||
 
