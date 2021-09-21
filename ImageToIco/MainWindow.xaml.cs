@@ -52,6 +52,7 @@ namespace ImageToIco
             SaveBtn.IsEnabled = true;
         }
 
+
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
         {
             if (fileNames.Length < 1)
@@ -126,5 +127,6 @@ namespace ImageToIco
             items.Sort();
             return items;
         }
+
     }
 }

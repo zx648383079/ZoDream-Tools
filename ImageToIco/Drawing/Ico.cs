@@ -5,17 +5,21 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImageToIco.Drawing
 {
     public static class Ico
     {
-        const int bitmapSize = 40;
-        const int colorMode = 0;
-        const int directorySize = 16;
-        const int headerSize = 6;
+        /// <summary>
+        /// 每张图片头
+        /// </summary>
+        const int SizeIconImageEntry = 16;
+        /// <summary>
+        /// 文件头
+        /// </summary>
+        const int SizeIconHeader = 6;
+        const uint MaxWidth = 256;
+        const uint MaxHeight = 256;
 
         public static Bitmap ResizeImage(int width, int height, Image source)
         {
@@ -59,7 +63,7 @@ namespace ImageToIco.Drawing
                 using (var ia = new ImageAttributes())
                 {
                     ia.SetWrapMode(WrapMode.TileFlipXY);
-                    g.DrawImage(source, new System.Drawing.Rectangle(0, 0, width, height), 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, ia);
+                    g.DrawImage(source, new Rectangle(0, 0, width, height), 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, ia);
                 }
             }
             return bmp;
@@ -68,47 +72,27 @@ namespace ImageToIco.Drawing
         public static bool Converter(IEnumerable<Image> images, Stream stream)
         {
             var bw = new BinaryWriter(stream);
-            CreateHeader(images.Count(), bw);
-            var offset = headerSize + (directorySize * images.Count());
-
-            var cahce = new Dictionary<int, byte[]>();
-            var i = 0;
+            AddIconHeader(images.Count(), bw);
+            var offset = SizeIconHeader + (SizeIconImageEntry * images.Count());
+            var cacheItems = new Dictionary<int, byte[]>();
             foreach (var item in images)
             {
-                var length = GetImageSize(item);
-                //if (item.Width >= 256)
-                //{
-                //    var png = ImageCorrection(item);
-                //    var bytes = CreateBuffer(png);
-                //    cahce[i] = bytes;
-                //    length = bytes.Length;
-                //    if (png != item)
-                //    {
-                //        png.Dispose();
-                //    }
-                //}
-                CreateDirectory(offset, item, length, bw);
-                offset += length + bitmapSize;
-                i++;
+                // var length = GetImageSize(item);
+                var png = ImageCorrection(item);
+                var bytes = CreateBuffer(png);
+                cacheItems[offset] = bytes;
+                var length = bytes.Length;
+                if (png != item)
+                {
+                    png.Dispose();
+                }
+                AddImageHeader(offset, item, length, bw);
+                offset += length;
             }
-            i = 0;
-            foreach (var item in images)
+            foreach (var item in cacheItems)
             {
-                if (cahce.ContainsKey(i))
-                {
-                    CreateBitmap(item, colorMode, cahce[i].Length, bw);
-                    foreach (var byt in cahce[i])
-                    {
-                        bw.Write(byt);
-                    }
-                }
-                else
-                {
-                    CreateBitmap(item, colorMode, GetImageSize(item), bw);
-                    CreateDib(item, bw);
-                }
-
-                i++;
+                bw.BaseStream.Seek(item.Key, SeekOrigin.Begin);
+                bw.Write(item.Value);
             }
             bw.Dispose();
             return true;
@@ -129,6 +113,7 @@ namespace ImageToIco.Drawing
         public static bool Converter(Image source, int[] sizes, SmoothingMode quality, Stream stream)
         {
             var items = new List<Bitmap>();
+            // Array.Sort(sizes, (p1, p2) => p2.CompareTo(p1));
             foreach (var item in sizes)
             {
                 items.Add(ResizeImage(item, item, source, quality));
@@ -177,7 +162,7 @@ namespace ImageToIco.Drawing
         /// </summary>
         /// <param name="count"></param>
         /// <param name="writer"></param>
-        private static void CreateHeader(int count, BinaryWriter writer)
+        private static void AddIconHeader(int count, BinaryWriter writer)
         {
             writer.Write((ushort)0);
             writer.Write((ushort)1);
@@ -190,11 +175,10 @@ namespace ImageToIco.Drawing
             return image.Height * image.Width * 4;// * Image.GetPixelFormatSize(image.PixelFormat) / 1024 / 1024;
         }
 
-        private static void CreateDirectory(int offset, Image image, int imageLength, BinaryWriter writer)
+        private static void AddImageHeader(int offset, Image image, int imageLength, BinaryWriter writer)
         {
-            var size = imageLength + bitmapSize;
-            var width = image.Width >= 256 ? 0 : image.Width;
-            var height = image.Height >= 256 ? 0 : image.Height;
+            var width = image.Width >= MaxWidth ? byte.MinValue : image.Width;
+            var height = image.Height >= MaxHeight ? byte.MinValue : image.Height;
             var bpp = Image.GetPixelFormatSize(image.PixelFormat);
 
             writer.Write((byte)width);
@@ -203,39 +187,10 @@ namespace ImageToIco.Drawing
             writer.Write((byte)0);
             writer.Write((ushort)1);
             writer.Write((ushort)bpp);
-            writer.Write((uint)size);
+            writer.Write((uint)imageLength);
             writer.Write((uint)offset);
         }
 
-        private static void CreateBitmap(Image image, int compression, int imageLength, BinaryWriter writer)
-        {
-            writer.Write((uint)bitmapSize);
-            writer.Write((uint)image.Width);
-            writer.Write((uint)image.Height * 2);
-            writer.Write((ushort)1);
-            writer.Write((ushort)Image.GetPixelFormatSize(image.PixelFormat));
-            writer.Write((uint)compression);
-            writer.Write((uint)imageLength);
-            writer.Write(0);
-            writer.Write(0);
-            writer.Write((uint)0);
-            writer.Write((uint)0);
-        }
-
-        private static void CreateDib(Image image, BinaryWriter writer)
-        {
-            for (int i = 0; i < image.Height; i++)
-            {
-                for (int j = 0; j < image.Width; j++)
-                {
-                    var color = (image as Bitmap).GetPixel(j, i);
-                    writer.Write(color.B);
-                    writer.Write(color.G);
-                    writer.Write(color.R);
-                    writer.Write(color.A);
-                }
-            }
-        }
 
         private static byte[] CreateBuffer(Image image)
         {
@@ -263,7 +218,9 @@ namespace ImageToIco.Drawing
                 {
                     var bitmap = new Bitmap(img.Width, img.Height, PixelFormat.Format32bppPArgb);
                     using (var g = Graphics.FromImage(bitmap))
+                    {
                         g.DrawImage(img, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
+                    }
                     img = bitmap;
                 }
                 if (!img.RawFormat.Guid.Equals(ImageFormat.Png.Guid))
