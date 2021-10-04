@@ -12,4 +12,5 @@
 |SaveTxt|简体繁体转换并保存文件|||
 |TxtToDpl|PotPlayer直播源文件生成|||
 |ImageToIco|png 图片转ico 图标，支持不同尺寸不同图片|||
+|FindFile|根据Md5、CRC32查找重复的文件|||
 
