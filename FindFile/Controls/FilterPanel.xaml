@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <local:HeaderPanel Header="筛选方式">
+        <GroupBox Header="筛选方式">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <CheckBox Name="EmptyTb" Margin="0,2,0,5" IsChecked="True" ToolTip="不查找大小为0的文件">忽略空文件</CheckBox>
@@ -19,6 +19,6 @@
                     <CheckBox Name="DocumentTb" >包含文档</CheckBox>
                 </StackPanel>
             </ScrollViewer>
-        </local:HeaderPanel> 
+        </GroupBox> 
     </Grid>
 </UserControl>

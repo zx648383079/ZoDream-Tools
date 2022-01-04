@@ -33,7 +33,7 @@
             <!-- 选项 -->
             <control:FilterPanel x:Name="FilterBox" Grid.Row="1" Margin="0,0,7,7"/>
             <!-- 查找路径 -->
-            <control:HeaderPanel Header="查找路径" Grid.Row="2" Margin="0,0,7,7">
+            <GroupBox Header="查找路径" Grid.Row="2" Margin="0,0,7,7">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition/>
@@ -58,7 +58,7 @@
                             Content="&#xE109;" 
                             Style="{StaticResource IconBtn}" Click="AddFolderBtn_Click"/>
                 </Grid>
-            </control:HeaderPanel>
+            </GroupBox>
             <Grid Grid.Row="3" Margin="0,0,7,7">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>

@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <local:HeaderPanel Header="匹配方式">
+        <GroupBox Header="匹配方式">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <CheckBox Name="NameTb"  Margin="0,2,0,5">文件名</CheckBox>
@@ -17,6 +17,6 @@
                     <CheckBox Name="CrcTb">文件CRC32</CheckBox>
                 </StackPanel>
             </ScrollViewer>
-        </local:HeaderPanel>
+        </GroupBox>
     </Grid>
 </UserControl>

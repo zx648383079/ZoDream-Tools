@@ -3,8 +3,4 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:ZoDream.FindFile">
 
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="/Themes/HeaderPanel.xaml"/>
-    </ResourceDictionary.MergedDictionaries>
-    
 </ResourceDictionary>
