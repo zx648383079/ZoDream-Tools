@@ -13,4 +13,5 @@
 |TxtToDpl|PotPlayer直播源文件生成|||
 |ImageToIco|png 图片转ico 图标，支持不同尺寸不同图片|||
 |FindFile|根据Md5、CRC32查找重复的文件|||
+|ControlBrowser|查看WPF自带控件的xaml资源|||
 
