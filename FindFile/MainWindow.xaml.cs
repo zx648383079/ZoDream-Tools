@@ -27,163 +27,44 @@ namespace ZoDream.FindFile
         {
             InitializeComponent();
             DataContext = ViewModel;
-            finder.FileChanged += Finder_FileChanged;
-            finder.FoundChanged += Finder_FoundChanged;
-            finder.Finished += Finder_Finished;
         }
 
-        private void Finder_Finished()
+        public MainViewModel ViewModel => (MainViewModel)DataContext;
+        
+
+
+        private void GroupBox_PreviewDragOver(object sender, DragEventArgs e)
         {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                ViewModel.ShowMessage("查找完成");
-                ResetBtn.IsEnabled = StartBtn.IsEnabled = true;
-            });
+            e.Effects = DragDropEffects.Link;
+            e.Handled = true;
         }
 
-        private void Finder_FoundChanged(Models.FileItem item)
+        private void GroupBox_Drop(object sender, DragEventArgs e)
         {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                ViewModel.FileItems.Add(new FilenNotifyItem(item));
-            });
-        }
-
-        private void Finder_FileChanged(string fileName)
-        {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                ViewModel.Message = fileName;
-            });
-            
-        }
-
-        public MainViewModel ViewModel = new();
-        private Finder finder = new Finder();
-
-        private void AddFolderBtn_Click(object sender, RoutedEventArgs e)
-        {
-            var picker = new System.Windows.Forms.FolderBrowserDialog();
-            if (picker.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 return;
             }
-            if (ViewModel.FolderItems.Contains(picker.SelectedPath))
+            var items = (IEnumerable<string>)e.Data.GetData(DataFormats.FileDrop);
+            if (items == null)
             {
                 return;
             }
-            ViewModel.FolderItems.Add(picker.SelectedPath);
+            ViewModel.AddFolder(items);
         }
 
-        private void StartBtn_Click(object sender, RoutedEventArgs e)
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            if (ViewModel.FolderItems.Count == 0)
+            if (sender is not CheckBox checkTb)
             {
-                MessageBox.Show("请选择文件夹");
                 return;
             }
-            ViewModel.FileItems.Clear();
-            ResetBtn.IsEnabled = StartBtn.IsEnabled = false;
-            finder.CompareFlags = CompareBox.CompareFlags;
-            finder.FilterFlags = FilterBox.FilterFlags;
-            finder.Start(ViewModel.FolderItems.ToArray());
+            ViewModel.CheckFileCommand.Execute(checkTb.DataContext);
         }
 
-        private void ResetBtn_Click(object sender, RoutedEventArgs e)
+        private void ListViewItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            ViewModel.FileItems.Clear();
-            ViewModel.FolderItems.Clear();
-            finder.Stop();
-        }
-
-        private void CheckFileBtn_Click(object sender, RoutedEventArgs e)
-        {
-            if (ViewModel.FileItems.Count == 0)
-            {
-                MessageBox.Show("没有可用数据", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-            if (ViewModel.FileItems.Any(x => x.IsChecked))
-            {
-                foreach (var item in ViewModel.FileItems)
-                {
-                    item.IsChecked = false;
-                }
-            }
-            else
-            {
-                foreach (var item in ViewModel.FileItems)
-                {
-                    item.IsChecked = true;
-                }
-                var keyList = ViewModel.FileItems.GroupBy(x => x.Guid);
-                foreach (var keyItem in keyList)
-                {
-                    ViewModel.FileItems.First(x => x.Guid == keyItem.Key).IsChecked = false;
-                }
-            }
-        }
-
-        private void DeleteFileBtn_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (ViewModel.FileItems.Count == 0)
-                {
-                    MessageBox.Show("没有可用数据", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                if (MessageBox.Show($"确认要删除选中文件吗？文件删除后不可恢复！", "提示", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                {
-                    return;
-                }
-
-                foreach (var file in ViewModel.FileItems)
-                {
-                    if (file.IsChecked == false)
-                    {
-                        continue;
-                    }
-                    System.IO.File.Delete(file.FileName);
-                }
-                ViewModel.FileItems.Clear();
-                MessageBox.Show("删除完成", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"删除失败：{ex.Message}", "提示", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void CheckBtn_Checked(object sender, RoutedEventArgs e)
-        {
-            var checkTb = sender as CheckBox;
-            if (checkTb == null)
-            {
-                return;
-            }
-            var item = checkTb.DataContext as FilenNotifyItem;
-            if (item == null)
-            {
-                return;
-            }
-            if (!ViewModel.FileItems.Any(x => x.Guid == item.Guid && !x.IsChecked))
-            {
-                MessageBox.Show("必须至少保留重复文件中的一个", "提示", MessageBoxButton.OK, MessageBoxImage.Stop);
-                checkTb.IsChecked = false;
-                return;
-            }
-        }
-
-        private void RemoveFolderBtn_Click(object sender, RoutedEventArgs e)
-        {
-            var tag = (sender as Button)?.Tag;
-            if (tag == null)
-            {
-                return;
-            }
-            ViewModel.FolderItems.Remove(tag.ToString());
+            ViewModel.SeeFileCommand.Execute((sender as ListViewItem)?.DataContext);
         }
     }
 }

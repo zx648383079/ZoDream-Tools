@@ -24,14 +24,40 @@ namespace ZoDream.FindFile.Controls
         public FilterPanel()
         {
             InitializeComponent();
+            Loaded += FilterPanel_Loaded;
         }
+
+        private void FilterPanel_Loaded(object sender, RoutedEventArgs e)
+        {
+            foreach (var item in GroupPanel.Children)
+            {
+                if (item is CheckBox box)
+                {
+                    box.Checked += CheckBox_Changed;
+                    box.Unchecked += CheckBox_Changed;
+                }
+            }
+        }
+
+        public FileFilterFlags Value {
+            get { return (FileFilterFlags)GetValue(ValueProperty); }
+            set { SetValue(ValueProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for Value.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ValueProperty =
+            DependencyProperty.Register("Value", typeof(FileFilterFlags), 
+                typeof(FilterPanel), new PropertyMetadata(FileFilterFlags.None, (d, s) => {
+                    (d as FilterPanel)?.UpdateValue();
+                }));
+
 
 
 
         public FileFilterFlags FilterFlags
         {
             get {
-                var flag = (FileFilterFlags)0;
+                var flag = FileFilterFlags.None;
                 if (EmptyTb.IsChecked == true)
                 {
                     flag |= FileFilterFlags.NotEmpty;
@@ -73,5 +99,14 @@ namespace ZoDream.FindFile.Controls
             }
         }
 
+        private void UpdateValue()
+        {
+            FilterFlags = Value;
+        }
+
+        private void CheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            Value = FilterFlags;
+        }
     }
 }

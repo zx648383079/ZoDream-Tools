@@ -1,9 +1,10 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:converter="clr-namespace:ZoDream.FindFile.Converters">
+                    xmlns:cvt="clr-namespace:ZoDream.FindFile.Converters">
     <FontFamily x:Key="IconFontFamily">Segoe MDL2 Assets</FontFamily>
     <FontFamily x:Key="TextFontFamily">Microsoft YaHei</FontFamily>
-    <converter:SizeConverter x:Key="SizeConverter"/>
+    <cvt:SizeConverter x:Key="SizeCvt"/>
+    <cvt:ToggleConverter x:Key="ToggleCvt"/>
 
     <Style x:Key="IconTb" TargetType="TextBlock">
         <Setter Property="VerticalAlignment" Value="Center"/>

@@ -13,7 +13,7 @@ using System.Collections.Concurrent;
 
 namespace ZoDream.FindFile.Shared
 {
-    public class Finder
+    public class StorageFinder
     {
         private CancellationTokenSource? _cancelTokenSource;
 
@@ -112,6 +112,12 @@ namespace ZoDream.FindFile.Shared
         {
             if (_cancelTokenSource == null || _cancelTokenSource.IsCancellationRequested)
             {
+                return;
+            }
+            var file = new FileInfo(folder);
+            if (file.Exists)
+            {
+                RunFile(folder);
                 return;
             }
             EachFiles(folder, items =>

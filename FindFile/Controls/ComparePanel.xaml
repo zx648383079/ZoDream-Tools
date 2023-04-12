@@ -9,11 +9,11 @@
     <Grid>
         <GroupBox Header="匹配方式">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <CheckBox Name="NameTb"  Margin="0,2,0,5">文件名</CheckBox>
-                    <CheckBox Name="SizeTb"  Margin="0,0,0,5">文件大小</CheckBox>
-                    <CheckBox Name="MtimeTb"  Margin="0,0,0,5">文件修改时间</CheckBox>
-                    <CheckBox Name="Md5Tb" Margin="0,0,0,5" IsChecked="True">文件MD5</CheckBox>
+                <StackPanel x:Name="GroupPanel">
+                    <CheckBox Name="NameTb" Margin="0,2,0,5">文件名</CheckBox>
+                    <CheckBox Name="SizeTb" Margin="0,0,0,5">文件大小</CheckBox>
+                    <CheckBox Name="MtimeTb" Margin="0,0,0,5">文件修改时间</CheckBox>
+                    <CheckBox Name="Md5Tb" Margin="0,0,0,5">文件MD5</CheckBox>
                     <CheckBox Name="CrcTb">文件CRC32</CheckBox>
                 </StackPanel>
             </ScrollViewer>

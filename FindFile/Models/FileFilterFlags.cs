@@ -9,6 +9,7 @@ namespace ZoDream.FindFile.Models
     [Flags]
     public enum FileFilterFlags
     {
+        None = 0,
         NotEmpty = 0x1,
         NotHidden = 0x2,
         NotLess = 0x4,

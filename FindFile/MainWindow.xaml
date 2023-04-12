@@ -5,6 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ZoDream.FindFile"
         xmlns:control="clr-namespace:ZoDream.FindFile.Controls"
+        xmlns:vm="clr-namespace:ZoDream.FindFile.ViewModels"
+        x:Name="root"
         mc:Ignorable="d"
         Title="查找重复文件" Height="600" Width="800" WindowStartupLocation="CenterScreen">
     <Window.Resources>
@@ -12,8 +14,14 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Skins/MainSkin.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="ListViewItem">
+                <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick"/>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
     
     <Grid>
         <Grid.ColumnDefinitions>
@@ -29,11 +37,14 @@
             </Grid.RowDefinitions>
 
             <!-- 匹配方式 -->
-            <control:ComparePanel x:Name="CompareBox" Margin="0,0,7,7"/>
+            <control:ComparePanel x:Name="CompareBox" IsEnabled="{Binding IsPaused}" Value="{Binding CompareFlags,Mode=TwoWay}" Margin="0,0,7,7"/>
             <!-- 选项 -->
-            <control:FilterPanel x:Name="FilterBox" Grid.Row="1" Margin="0,0,7,7"/>
+            <control:FilterPanel x:Name="FilterBox" IsEnabled="{Binding IsPaused}" Value="{Binding FilterFlags,Mode=TwoWay}" Grid.Row="1" Margin="0,0,7,7"/>
             <!-- 查找路径 -->
-            <GroupBox Header="查找路径" Grid.Row="2" Margin="0,0,7,7">
+            <GroupBox Header="查找路径" Grid.Row="2" Margin="0,0,7,7" 
+                      AllowDrop="{Binding IsPaused}" 
+                  PreviewDragOver="GroupBox_PreviewDragOver"
+                  Drop="GroupBox_Drop">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition/>
@@ -45,18 +56,24 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Name="RemoveFolderBtn"
-                                            Click="RemoveFolderBtn_Click"
-                                            Content="&#xE106;" Style="{StaticResource IconBtn}" Tag="{Binding }" 
+                                    <Button 
+                                            Command="{Binding ElementName=root, 
+                                            Path=DataContext.DeleteFolderCommand}"      
+                                            CommandParameter="{Binding}"
+                                            Visibility="{Binding ElementName=root, 
+                                            Path=DataContext.IsPaused,Converter={StaticResource ToggleCvt}}"
+                                            Content="&#xE106;" Style="{StaticResource IconBtn}"
                                             ToolTip="删除" BorderThickness="0"/>
                                     <TextBlock VerticalAlignment="Center" Text="{Binding }"></TextBlock>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                    <Button x:Name="AddFolderBtn" Grid.Row="1" 
+                    <Button Grid.Row="1" 
                             Content="&#xE109;" 
-                            Style="{StaticResource IconBtn}" Click="AddFolderBtn_Click"/>
+                            IsEnabled="{Binding IsPaused}"
+                            Command="{Binding OpenFolderCommand}"
+                            Style="{StaticResource IconBtn}"/>
                 </Grid>
             </GroupBox>
             <Grid Grid.Row="3" Margin="0,0,7,7">
@@ -64,8 +81,11 @@
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <Button x:Name="StartBtn" Content="查找" Click="StartBtn_Click"/>
-                <Button x:Name="ResetBtn" Content="重置" Grid.Column="1" Click="ResetBtn_Click"/>
+                <Button Content="{Binding FindText}"
+                        Command="{Binding FindCommand}"/>
+                <Button Content="重置" Grid.Column="1" 
+                        IsEnabled="{Binding IsPaused}"
+                        Command="{Binding ResetCommand}"/>
             </Grid>
         </Grid>
         <Grid Grid.Column="1">
@@ -85,8 +105,8 @@
                     <DockPanel>
                         <!-- 重复文件列表功能区 -->
                         <StackPanel Height="30" DockPanel.Dock="Top" Orientation="Horizontal" Margin="2,5,0,5">
-                            <Button Name="CheckFileBtn" Click="CheckFileBtn_Click" ToolTip="批量选中重复文件" Content="&#xE0A2;" Style="{StaticResource IconBtn}"/>
-                            <Button Name="DeleteFileBtn" Click="DeleteFileBtn_Click" ToolTip="删除选中文件" Content="&#xE107;" Style="{StaticResource IconBtn}"/>
+                            <Button Name="CheckFileBtn" IsEnabled="{Binding IsPaused}" Command="{Binding CheckCommand}" ToolTip="批量选中重复文件" Content="&#xE0A2;" Style="{StaticResource IconBtn}"/>
+                            <Button Name="DeleteFileBtn" IsEnabled="{Binding IsPaused}" Command="{Binding DeleteCommand}" ToolTip="删除选中文件" Content="&#xE107;" Style="{StaticResource IconBtn}"/>
 
                             <!-- loading模块 -->
                             <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
@@ -107,13 +127,13 @@
                                     <GridViewColumn>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <CheckBox Name="CheckBtn" Checked="CheckBtn_Checked" IsChecked="{Binding IsChecked, Mode=TwoWay}"  />
+                                                <CheckBox Checked="CheckBox_Checked" IsChecked="{Binding IsChecked, Mode=TwoWay}"  />
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
                                     <GridViewColumn Width="230" Header="文件名" DisplayMemberBinding="{Binding Name}"></GridViewColumn>
                                     <GridViewColumn Width="150" Header="修改时间" DisplayMemberBinding="{Binding Mtime, StringFormat=yyyy-MM-dd HH:mm:ss}"></GridViewColumn>
-                                    <GridViewColumn Width="100" Header="大小" DisplayMemberBinding="{Binding Size,Converter={StaticResource SizeConverter}}"></GridViewColumn>
+                                    <GridViewColumn Width="100" Header="大小" DisplayMemberBinding="{Binding Size,Converter={StaticResource SizeCvt}}"></GridViewColumn>
                                     <GridViewColumn Width="100" Header="MD5" DisplayMemberBinding="{Binding Md5}"></GridViewColumn>
                                     <GridViewColumn Width="100" Header="CRC32" DisplayMemberBinding="{Binding Crc32}"></GridViewColumn>
                                     <GridViewColumn Width="auto" Header="路径" DisplayMemberBinding="{Binding FileName}"></GridViewColumn>

@@ -9,8 +9,8 @@
     <Grid>
         <GroupBox Header="筛选方式">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <CheckBox Name="EmptyTb" Margin="0,2,0,5" IsChecked="True" ToolTip="不查找大小为0的文件">忽略空文件</CheckBox>
+                <StackPanel x:Name="GroupPanel">
+                    <CheckBox Name="EmptyTb" Margin="0,2,0,5" ToolTip="不查找大小为0的文件">忽略空文件</CheckBox>
                     <CheckBox Name="HiddenTb" Margin="0,0,0,5">忽略隐藏文件</CheckBox>
                     <CheckBox Name="SmallTb" Margin="0,0,0,5">忽略小文件（小于1024KB）</CheckBox>
                     <CheckBox Name="ImageTb" Margin="0,0,0,5">包含图片</CheckBox>

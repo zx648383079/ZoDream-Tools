@@ -24,13 +24,38 @@ namespace ZoDream.FindFile.Controls
         public ComparePanel()
         {
             InitializeComponent();
+            Loaded += ComparePanel_Loaded;
         }
+
+        private void ComparePanel_Loaded(object sender, RoutedEventArgs e)
+        {
+            foreach (var item in GroupPanel.Children)
+            {
+                if (item is CheckBox box)
+                {
+                    box.Checked += CheckBox_Changed;
+                    box.Unchecked += CheckBox_Changed;
+                }
+            }
+        }
+
+        public FileCompareFlags Value {
+            get { return (FileCompareFlags)GetValue(ValueProperty); }
+            set { SetValue(ValueProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for Value.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ValueProperty =
+            DependencyProperty.Register("Value", typeof(FileCompareFlags), typeof(ComparePanel), 
+                new PropertyMetadata(FileCompareFlags.None, (d, s) => {
+                    (d as ComparePanel)?.UpdateValue();
+                }));
 
         public FileCompareFlags CompareFlags
         {
             get
             {
-                var flag = (FileCompareFlags)0;
+                var flag = FileCompareFlags.None;
                 if (NameTb.IsChecked == true)
                 {
                     flag |= FileCompareFlags.Name;
@@ -61,6 +86,16 @@ namespace ZoDream.FindFile.Controls
                 Md5Tb.IsChecked = value.HasFlag(FileCompareFlags.MD5);
                 CrcTb.IsChecked = value.HasFlag(FileCompareFlags.CRC32);
             }
+        }
+
+        private void UpdateValue()
+        {
+            CompareFlags = Value;
+        }
+
+        private void CheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            Value = CompareFlags;
         }
     }
 }

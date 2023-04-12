@@ -9,6 +9,7 @@ namespace ZoDream.FindFile.Models
     [Flags]
     public enum FileCompareFlags
     {
+        None = 0,
         Name = 0x1,
         Size = 0x2,
         Mtime = 0x4,
