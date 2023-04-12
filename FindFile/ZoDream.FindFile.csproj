@@ -9,6 +9,11 @@
 	  <Author>zodream</Author>
 	  <Version>1.0</Version>
     <UseWindowsForms>True</UseWindowsForms>
+    <ApplicationIcon>find.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="find.ico" />
+  </ItemGroup>
 
 </Project>
