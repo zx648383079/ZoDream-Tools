@@ -26,7 +26,6 @@ namespace ZoDream.FindFile
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = ViewModel;
         }
 
         public MainViewModel ViewModel => (MainViewModel)DataContext;
