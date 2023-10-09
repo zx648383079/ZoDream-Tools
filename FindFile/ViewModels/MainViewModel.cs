@@ -148,14 +148,16 @@ namespace ZoDream.FindFile.ViewModels
             }
             else
             {
+                var exist = new List<string>();
                 foreach (var item in FileItems)
                 {
-                    item.IsChecked = true;
-                }
-                var keyList = FileItems.GroupBy(x => x.Guid);
-                foreach (var keyItem in keyList)
-                {
-                    FileItems.First(x => x.Guid == keyItem.Key).IsChecked = false;
+                    if (exist.Contains(item.Guid))
+                    {
+                        item.IsChecked = true;
+                        continue;
+                    }
+                    item.IsChecked = false;
+                    exist.Add(item.Guid);
                 }
             }
         }
