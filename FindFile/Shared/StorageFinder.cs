@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
@@ -145,30 +144,35 @@ namespace ZoDream.FindFile.Shared
             {
                 return;
             }
-            Task.Factory.StartNew(() =>
+            CheckFile(fileInfo);
+            //Task.Factory.StartNew(() => {
+            //    CheckFile(fileInfo);
+            //}, _cancelTokenSource.Token);
+        }
+
+        private void CheckFile(FileInfo fileInfo)
+        {
+            var item = new FileItem()
             {
-                var item = new FileItem()
+                Name = fileInfo.Name,
+                FileName = fileInfo.FullName,
+                Extension = fileInfo.Extension,
+                Size = fileInfo.Length,
+                Mtime = fileInfo.LastWriteTime,
+                Ctime = fileInfo.CreationTime,
+            };
+            using (var fs = fileInfo.OpenRead())
+            {
+                item.Md5 = Storage.GetMD5(fs);
+                if (_cancelTokenSource.IsCancellationRequested)
                 {
-                    Name = fileInfo.Name,
-                    FileName = fileInfo.FullName,
-                    Extension = fileInfo.Extension,
-                    Size = fileInfo.Length,
-                    Mtime = fileInfo.LastWriteTime,
-                    Ctime = fileInfo.CreationTime,
-                };
-                using (var fs = fileInfo.OpenRead())
-                {
-                    item.Md5 = Storage.GetMD5(fs);
-                    if (_cancelTokenSource.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                    fs.Seek(0, SeekOrigin.Begin);
-                    item.Crc32 = Storage.GetCRC32(fs);
+                    return;
                 }
-                item.Guid = FormatGuid(item);
-                AppendFile(item);
-            }, _cancelTokenSource.Token);
+                fs.Seek(0, SeekOrigin.Begin);
+                item.Crc32 = Storage.GetCRC32(fs);
+            }
+            item.Guid = FormatGuid(item);
+            AppendFile(item);
         }
 
         private void AppendFile(FileItem item)
