@@ -3,11 +3,11 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFrameworks>net7.0-windows;net48</TargetFrameworks>
-	  <LangVersion>10</LangVersion>
+	  <LangVersion>11</LangVersion>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
 	  <Author>zodream</Author>
-	  <Version>1.0</Version>
+	  <Version>1.1</Version>
     <UseWindowsForms>True</UseWindowsForms>
     <ApplicationIcon>find.ico</ApplicationIcon>
   </PropertyGroup>
