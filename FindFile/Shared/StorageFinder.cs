@@ -77,6 +77,10 @@ namespace ZoDream.FindFile.Shared
                         {
                             return;
                         }
+                        if (mapFinished)
+                        {
+                            FileChanged?.Invoke(item.Value[0].FileName);
+                        }
                         CompleteFiles(item.Value, token);
                     }
                     if (mapFinished)

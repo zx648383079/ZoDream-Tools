@@ -110,7 +110,7 @@
 
                             <!-- loading模块 -->
                             <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
-                                <TextBlock Text="&#xE149;" Style="{StaticResource IconTb}"/>
+                                <TextBlock Style="{StaticResource LoadingIconTb}" Visibility="{Binding IsPaused,Converter={StaticResource ToggleCvt},ConverterParameter=False}"/>
                                 <TextBlock VerticalAlignment="Center" Text="{Binding Message,Mode=OneWay}"/>
                             </StackPanel>
                         </StackPanel>

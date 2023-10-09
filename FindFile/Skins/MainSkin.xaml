@@ -17,6 +17,26 @@
         <Setter Property="Height" Value="30"/>
     </Style>
 
+    <RotateTransform x:Key="RingKey" Angle="0"/>
+
+    <Style x:Key="LoadingIconTb" TargetType="TextBlock" BasedOn="{StaticResource IconTb}">
+        <Setter Property="Text" Value="&#xE149;"/>
+        <Setter Property="RenderTransformOrigin" Value=".5,.5"/>
+        <Setter Property="RenderTransform" Value="{StaticResource RingKey}"/>
+        <Style.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <BeginStoryboard.Storyboard>
+                        <Storyboard RepeatBehavior="Forever"
+                                    Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)">
+                            <DoubleAnimation From="0" To="360" Duration="00:00:01" />
+                        </Storyboard>
+                    </BeginStoryboard.Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Style.Triggers>
+    </Style>
+
     <CollectionViewSource x:Key="ListGroupKey" Source="{Binding FileItems}">
         <CollectionViewSource.GroupDescriptions>
             <PropertyGroupDescription PropertyName="Guid"></PropertyGroupDescription>

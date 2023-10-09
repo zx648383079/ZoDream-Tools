@@ -48,9 +48,13 @@ namespace ZoDream.FindFile.Converters
             if (pStr.StartsWith("^"))
             {
                 isRevert = true;
+#if NET6_0_OR_GREATER
+                pStr = pStr[1..];
+#else
                 pStr = pStr.Substring(1);
+#endif
             }
-            return pStr.Split(',').Contains(vStr) == !isRevert;
+            return pStr.Split('|').Contains(vStr) == !isRevert;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
