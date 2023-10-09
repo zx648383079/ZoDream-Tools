@@ -18,6 +18,7 @@ namespace ZoDream.FindFile.Shared
 
         private IList<IFileFilter>? _filterItems;
 
+        private readonly ConcurrentDictionary<long, List<FileItem>> _fileSizeItems = new();
         private readonly ConcurrentDictionary<string, List<FileItem>> _fileGroupItems = new();
 
         public event FinderLogEventHandler? FileChanged;
@@ -44,6 +45,8 @@ namespace ZoDream.FindFile.Shared
         {
             Stop();
             _cancelTokenSource = new CancellationTokenSource();
+            var token = _cancelTokenSource.Token;
+            var mapFinished = false;
             Task.Factory.StartNew(() =>
             {
                 foreach (var item in folders)
@@ -52,10 +55,37 @@ namespace ZoDream.FindFile.Shared
                     {
                         return;
                     }
-                    RunFolder(item);
+                    CheckFolderOrFile(item, token);
+                }
+                mapFinished = true;
+            }, token);
+            Task.Factory.StartNew(() => {
+                while (true)
+                {
+                    Thread.Sleep(100);
+                    if (token.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    foreach (var item in _fileSizeItems)
+                    {
+                        if (item.Value.Count < 2)
+                        {
+                            continue;
+                        }
+                        if (token.IsCancellationRequested)
+                        {
+                            return;
+                        }
+                        CompleteFiles(item.Value, token);
+                    }
+                    if (mapFinished)
+                    {
+                        break;
+                    }
                 }
                 Finished?.Invoke();
-            }, _cancelTokenSource.Token);
+            }, token);
         }
 
         public void Stop()
@@ -66,6 +96,7 @@ namespace ZoDream.FindFile.Shared
                 Finished?.Invoke();
             }
             _fileGroupItems.Clear();
+            _fileSizeItems.Clear();
         }
 
         private void InitFilters()
@@ -107,34 +138,34 @@ namespace ZoDream.FindFile.Shared
             _filterItems.Add(filter);
         }
 
-        private void RunFolder(string folder)
+        private void CheckFolderOrFile(string folder, CancellationToken token)
         {
-            if (_cancelTokenSource == null || _cancelTokenSource.IsCancellationRequested)
+            if (token.IsCancellationRequested)
             {
                 return;
             }
             var file = new FileInfo(folder);
             if (file.Exists)
             {
-                RunFile(folder);
+                CheckFile(folder, token);
                 return;
             }
             EachFiles(folder, items =>
             {
-                if (_cancelTokenSource.IsCancellationRequested)
+                if (token.IsCancellationRequested)
                 {
                     return;
                 }
                 foreach (var item in items)
                 {
-                    RunFile(item);
+                    CheckFile(item, token);
                 }
             });
         }
 
-        private void RunFile(string fileName)
+        private void CheckFile(string fileName, CancellationToken token)
         {
-            if (_cancelTokenSource == null || _cancelTokenSource.IsCancellationRequested)
+            if (token.IsCancellationRequested)
             {
                 return;
             }
@@ -147,7 +178,7 @@ namespace ZoDream.FindFile.Shared
             CheckFile(fileInfo);
             //Task.Factory.StartNew(() => {
             //    CheckFile(fileInfo);
-            //}, _cancelTokenSource.Token);
+            //}, token);
         }
 
         private void CheckFile(FileInfo fileInfo)
@@ -161,23 +192,16 @@ namespace ZoDream.FindFile.Shared
                 Mtime = fileInfo.LastWriteTime,
                 Ctime = fileInfo.CreationTime,
             };
-            using (var fs = fileInfo.OpenRead())
-            {
-                item.Md5 = Storage.GetMD5(fs);
-                if (_cancelTokenSource.IsCancellationRequested)
-                {
-                    return;
-                }
-                fs.Seek(0, SeekOrigin.Begin);
-                item.Crc32 = Storage.GetCRC32(fs);
-            }
-            item.Guid = FormatGuid(item);
-            AppendFile(item);
+            var items = new List<FileItem>() { item };
+            var resItems = _fileSizeItems.AddOrUpdate(item.Size, items, (k, oldItems) => {
+                oldItems.Add(item);
+                return oldItems;
+            });
         }
 
-        private void AppendFile(FileItem item)
+        private void AppendFile(FileItem item, CancellationToken token)
         {
-            if (_cancelTokenSource == null || _cancelTokenSource.IsCancellationRequested)
+            if (token.IsCancellationRequested)
             {
                 return;
             }
@@ -195,6 +219,51 @@ namespace ZoDream.FindFile.Shared
                 }
                 FoundChanged?.Invoke(item);
             }
+        }
+
+        private void CompleteFiles(List<FileItem> items, CancellationToken token)
+        {
+            foreach (var item in items)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+                CompleteFile(item, token);
+            }
+        }
+
+        private void CompleteFile(FileItem file, CancellationToken token)
+        {
+            if (!string.IsNullOrEmpty(file.Md5) || !string.IsNullOrEmpty(file.Crc32) || !string.IsNullOrEmpty(file.Guid))
+            {
+                return;
+            }
+            var hasMd5 = CompareFlags.HasFlag(FileCompareFlags.MD5);
+            var hasCrc = CompareFlags.HasFlag(FileCompareFlags.CRC32);
+            if (!hasMd5 && !hasCrc)
+            {
+                file.Guid = FormatGuid(file);
+                AppendFile(file, token);
+                return;
+            }
+            using (var fs = File.OpenRead(file.FileName))
+            {
+                if (hasMd5) {
+                    file.Md5 = Storage.GetMD5(fs);
+                }
+                if (token.IsCancellationRequested)
+                {
+                    return;
+                }
+                if (hasCrc)
+                {
+                    fs.Seek(0, SeekOrigin.Begin);
+                    file.Crc32 = Storage.GetCRC32(fs);
+                }
+            }
+            file.Guid = FormatGuid(file);
+            AppendFile(file, token);
         }
 
         private string FormatGuid(FileItem item)
@@ -221,7 +290,11 @@ namespace ZoDream.FindFile.Shared
                 sb.Append(item.Crc32);
             }
             var buffer = Encoding.Default.GetBytes(sb.ToString());
+#if NET6_0_OR_GREATER
+            var data = MD5.HashData(buffer);
+#else
             var data = MD5.Create().ComputeHash(buffer);
+#endif
             sb.Clear();
             foreach (var t in data)
             {
@@ -229,7 +302,11 @@ namespace ZoDream.FindFile.Shared
             }
             return sb.ToString();
         }
-
+        /// <summary>
+        /// 过滤文件
+        /// </summary>
+        /// <param name="fileInfo"></param>
+        /// <returns></returns>
         private bool IsValidFile(FileInfo fileInfo)
         {
             InitFilters();
