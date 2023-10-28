@@ -51,14 +51,18 @@ namespace ZoDream.FindFile.Utils
 
         public static string GetMD5(Stream fs)
         {
-            var md5 = MD5.Create();
+            using var md5 = MD5.Create();
             var res = md5.ComputeHash(fs);
+#if NET5_0_OR_GREATER
+            return Convert.ToHexString(res);
+#else
             var sb = new StringBuilder();
             foreach (var b in res)
             {
-                sb.Append(b.ToString("x2"));
+                sb.Append(b.ToString("X2"));
             }
             return sb.ToString();
+#endif
         }
 
         public static string GetCRC32(string fileName)

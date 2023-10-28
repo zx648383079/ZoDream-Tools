@@ -67,6 +67,7 @@ namespace ZoDream.FindFile.Shared
                     {
                         return;
                     }
+                    var isFinished = mapFinished;
                     foreach (var item in _fileSizeItems)
                     {
                         if (item.Value.Count < 2)
@@ -83,7 +84,7 @@ namespace ZoDream.FindFile.Shared
                         }
                         CompleteFiles(item.Value, token);
                     }
-                    if (mapFinished)
+                    if (mapFinished && mapFinished == isFinished)
                     {
                         break;
                     }
@@ -164,7 +165,7 @@ namespace ZoDream.FindFile.Shared
                 {
                     CheckFile(item, token);
                 }
-            });
+            }, token);
         }
 
         private void CheckFile(string fileName, CancellationToken token)
@@ -328,17 +329,17 @@ namespace ZoDream.FindFile.Shared
             return true;
         }
 
-        private void EachFiles(string folder, Action<IEnumerable<string>> success)
+        private void EachFiles(string folder, Action<IEnumerable<string>> success, CancellationToken token)
         {
             try
             {
-                if (_cancelTokenSource == null || _cancelTokenSource.IsCancellationRequested)
+                if (token.IsCancellationRequested)
                 {
                     return;
                 }
                 Array.ForEach(Directory.GetDirectories(folder), fileName =>
                 {
-                    EachFiles(fileName, success);
+                    EachFiles(fileName, success, token);
                 });
                 success.Invoke(Directory.GetFiles(folder));
             }

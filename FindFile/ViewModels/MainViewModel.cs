@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -164,34 +165,45 @@ namespace ZoDream.FindFile.ViewModels
 
         private void TapDelete(object? _)
         {
-            try
+            if (FileItems.Count == 0)
             {
-                if (FileItems.Count == 0)
-                {
-                    MessageBox.Show("没有可用数据", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                if (MessageBox.Show($"确认要删除选中文件吗？文件删除后不可恢复！", "提示", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                {
-                    return;
-                }
-
-                foreach (var file in FileItems)
-                {
-                    if (file.IsChecked == false)
-                    {
-                        continue;
-                    }
-                    System.IO.File.Delete(file.FileName);
-                }
-                FileItems.Clear();
-                MessageBox.Show("删除完成", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("没有可用数据", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
-            catch (Exception ex)
+
+            if (MessageBox.Show($"确认要删除选中文件吗？文件删除后不可恢复！", "提示", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             {
-                MessageBox.Show($"删除失败：{ex.Message}", "提示", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
             }
+            var failureItems = new List<string>();
+            var failureGuid = new List<string>();
+            foreach (var file in FileItems)
+            {
+                if (!file.IsChecked)
+                {
+                    continue;
+                }
+                try
+                {
+                    File.Delete(file.FileName);
+                }
+                catch (Exception ex)
+                {
+                    failureItems.Add(file.FileName);
+                    failureGuid.Add(file.Guid);
+                    Message = $"删除失败：{ex.Message}, {file.FileName}";
+                }
+            }
+            for (var i = FileItems.Count - 1; i >= 0; i--)
+            {
+                var file = FileItems[i];
+                if (!failureGuid.Contains(file.Guid) || (file.IsChecked && !failureItems.Contains(file.FileName)))
+                {
+                    FileItems.RemoveAt(i);
+                    continue;
+                }
+            }
+            MessageBox.Show(failureItems.Count > 0 ? $"删除完成，失败{failureItems.Count}个" : "删除完成", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void TapOpenFolder(object? _)
@@ -240,7 +252,7 @@ namespace ZoDream.FindFile.ViewModels
         private void Finder_Finished()
         {
             App.Current.Dispatcher.Invoke(() => {
-                ShowMessage("查找完成");
+                Message = "查找完成";
                 IsPaused = true;
             });
         }
